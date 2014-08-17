@@ -29,6 +29,17 @@ It is an stand alone server, it expects a `json` file with the basic configurati
  * allow_post: Accept messages creation via POST. Otherwise messages needs to be generated via backend
  * daemon_ip: The deamon (should be private) the daemon should be binded to.
  * daemon_port: To what port should the daemon be binded to.
+ 
+Instalation
+-----------
+
+[Nanomsg](http://nanomsg.org/download.html) and `CMake` are required in order to build from source.
+
+```bash
+cmake .
+make
+./notifd ./config.json
+```
 
 Url
 ---
