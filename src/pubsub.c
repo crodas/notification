@@ -166,7 +166,7 @@ int pubsub_subscription_create(char * channel, http_connection_t * conn)
     rchannel[len+1] = '\0';
 
     conn->psocket = nn_socket (AF_SP, NN_SUB);
-    nn_setsockopt (conn->psocket, NN_SUB, NN_SUB_SUBSCRIBE, rchannel, 0);
+    nn_setsockopt (conn->psocket, NN_SUB, NN_SUB_SUBSCRIBE, rchannel, len);
 
     if ((conn->epsocket = nn_connect(conn->psocket, pubsub_name)) == -1) {
         // TODO: Shouldn't panic, insterad should return error
