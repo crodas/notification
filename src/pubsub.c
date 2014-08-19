@@ -30,6 +30,7 @@
 #include <nanomsg/nn.h>
 #include <nanomsg/reqrep.h>
 #include <nanomsg/pubsub.h>
+#include <nanomsg/pair.h>
 
 static char pubsub_name[40];
 static int sock;

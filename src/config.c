@@ -116,7 +116,7 @@ Config_t * config_init(int argc, char ** argv)
     env->start_time = now();
 
     CONFIG_SET_IF(integer, web_timeout, 30000)
-    CONFIG_SET_IF(integer, web_port, 8080)
+    CONFIG_SET_IF(integer, web_port, 8000)
     CONFIG_SET_IF(integer, web_history, 20)
     CONFIG_SET_IF(true, debug, 0)
     CONFIG_SET_IF_STR(web_ip, "0.0.0.0")

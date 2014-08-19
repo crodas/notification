@@ -43,13 +43,20 @@ static void conn_listen_no_messages(uv_timer_t * handle)
 static int do_subscribe(http_connection_t * conn)
 {
     char * channel = conn->request->url + 9;
+    int web_timeout = config->web_timeout;
+    char  * timeout = $_GET("timeout");
+    int ttimeout = 0;
 
-    if (config->web_timeout > 0) {
+    if (timeout && (ttimeout=atoi(timeout)) && BETWEEN(ttimeout, 1, 60)) {
+        web_timeout = ttimeout * 1000;
+    }
+
+    if (web_timeout > 0) {
         /* subscribe for pubsub */
         conn->timeout = (uv_timer_t*)malloc(sizeof(uv_timer_t));
         uv_timer_init(uv_default_loop(), conn->timeout);
         conn->timeout->data = (void *) conn;
-        uv_timer_start(conn->timeout, (uv_timer_cb) &conn_listen_no_messages, config->web_timeout, 0);
+        uv_timer_start(conn->timeout, (uv_timer_cb) &conn_listen_no_messages, web_timeout, 0);
         pubsub_subscription_create(channel, conn);
         ADDREF(conn);
         return;
@@ -75,7 +82,7 @@ void _messages_query_result(void * data, json_t * messages)
 
 static int do_listen(http_connection_t * conn)
 {
-    char * channel = conn->request->url + 9;
+    char * channel = conn->request->uri + 9;
     database_query(channel, _messages_query_result, (void *) conn);
     RESPONSE_STRING("channel", channel);
 }
@@ -98,8 +105,9 @@ static int get_info(http_connection_t * conn)
         json_object_set_new(info, "version", json_string(VERSION));
         json_object_set_new(info, "host", json_string(config->web_ip));
         json_object_set_new(info, "port", json_integer(config->web_port));
-        json_object_set_new(info, "uptime", json_integer((uint64)(now() - config->start_time)));
+        json_object_set_new(info, "uptime", json_real(now() - config->start_time));
         json_object_set_new(info, "requests", json_integer(config->requests));
+        printf("%f\n", now() - config->start_time);
     }
 
     RESPONSE_SET("info", info);

@@ -40,8 +40,10 @@
 #include <jansson.h>
 
 typedef long long uint64;
+typedef double utime_t;
 
 #define VERSION         "0.0.1-beta"
+
 
 struct Config {
     /* Web settings {{{ */
@@ -60,9 +62,10 @@ struct Config {
 
     uv_loop_t   * uv_loop;
 
-    double      start_time;
     short       debug;
     char        *db_path;
+
+    utime_t     start_time;
 };
 
 struct http_body {
@@ -91,6 +94,8 @@ struct http_request {
     int method;
     dict * headers;
     char * url;
+    char * uri;
+    dict * args;
 
     struct http_body body;
 
@@ -104,7 +109,7 @@ struct http_connection
     http_parser     parser;
     uv_write_t      write_req;
 
-    double time;
+    utime_t time;
 
     struct http_request * request;
     struct http_response * response;
@@ -193,6 +198,9 @@ void config_destroy(Config_t * config);
 #define RESPONSE_STRING(name, value)    json_object_set_new(conn->response->object, name, json_string(value))
 #define RESPONSE_SET(name, value)       json_object_set_new(conn->response->object, name, value)
 
+#define $_GET(x)                        dictFetchValue(conn->request->args, x);
+
+#define BETWEEN(a, min, max)                (a >= min && max >= a)
 #define MIN(a, b)                           (a > b ? b : a)
 #define BEGIN_ROUTES(routes)                static http_routes_t routes[] = {
 #define ROUTE(url, callback)                ROUTE_EX(HTTP_ANY, url, callback)

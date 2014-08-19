@@ -35,13 +35,13 @@ static Config_t     * config;
 static uv_loop_t    * uv_loop;
 static http_parser_settings parser_settings;
 
-double now()
+utime_t now()
 {
     struct timeval tp = {0};
     if (gettimeofday(&tp, NULL)) {
-        return -1;
+        return (utime_t)-1;
     }
-    return (double)(tp.tv_sec + tp.tv_usec / MICRO_IN_SEC);
+    return (utime_t)(tp.tv_sec + tp.tv_usec / MICRO_IN_SEC);
 }
 
 void http_stream_on_alloc(uv_handle_t* client, size_t suggested_size, uv_buf_t* buf)
@@ -62,6 +62,8 @@ static void _conn_destroy(void * ptr)
         dictRelease(conn->request->headers);
         zfree(conn->request->body.buffer);
         zfree(conn->request->url);
+        zfree(conn->request->uri);
+        dictRelease(conn->request->args);
         zfree(conn->request);
     }
     if (conn->response) {
@@ -120,7 +122,7 @@ static void on_connect(uv_stream_t* stream, int status)
     conn->routes    = (struct http_routes *)stream->data;
     conn->timeout   = NULL;
     conn->interval  = NULL;
-    conn->psocket = 0;
+    conn->psocket   = 0;
     conn->refcount  = 1;
     conn->replied   = 0;
     conn->free      = _conn_destroy;
@@ -185,7 +187,7 @@ static void http_build_header_ptr(http_response_t * response)
     END
     strncat(response->header_ptr + i, "\r\n", 2);
 
-    response->header_len = i + 3;
+    response->header_len = i + 2;
 }
 
 static void http_server_sent_body(uv_write_t* handle, int status)
@@ -365,24 +367,91 @@ WEB_EVENT(headers_complete)
     return 0;
 }
 
+void parse_query_string(dict * args, char * query)
+{
+    char * key = NULL, *value = NULL;
+    char * skey, *svalue;
+
+    while (*query) {
+        if (key == NULL) {
+            key = query;
+        }
+        switch (*query) {
+        case '=':
+            value = query+1;
+            break;
+        case '&':
+            skey = strndup(key, value - key - 1);
+            svalue = strndup(value, query - value);
+            dictAdd(args, skey, svalue); 
+            zfree(skey);
+            zfree(svalue);
+            key     = NULL;
+            value   = NULL;
+            break;
+        }
+        query++;
+    }
+
+    if (key) {
+        if (!value) value = query;
+        skey = strndup(key, value - key - 1);
+        svalue = strndup(value, query - value);
+        dictAdd(args, skey, svalue); 
+        zfree(skey);
+        zfree(svalue);
+    }
+
+    #if 0
+    FOREACH(args, skey, svalue)
+        printf("%s => %s\n", skey, svalue);
+    END
+    #endif
+}
+
+#define MESSAGE_CHECK_URL(u, variable, fn)                      \
+do {                                                            \
+  char ubuf[513];                                               \
+                                                                \
+  if ((u)->field_set & (1 << (fn))) {                           \
+    memcpy(ubuf, url + (u)->field_data[(fn)].off,               \
+      MIN(512, (u)->field_data[(fn)].len));                     \
+    ubuf[(u)->field_data[(fn)].len] = '\0';                     \
+  } else {                                                      \
+    ubuf[0] = '\0';                                             \
+  }                                                             \
+                                                                \
+  if (fn == UF_QUERY) {                                         \
+    variable = dictString(NULL);                                \
+    parse_query_string(variable, ubuf);                         \
+  } else {                                                      \
+    variable = strdup(ubuf);                                    \
+  }                                                             \
+} while(0)
+
+
+
 WEB_EVENT(url)
 {
     FETCH_CONNECTION;
 
     struct http_parser_url u;
 
-    char *data = (char *)malloc(sizeof(char) * length + 1);
-    strncpy(data, at, length);
-    data[length] = '\0';
+    char *url = (char *)malloc(sizeof(char) * length + 1);
+    strncpy(url, at, length);
+    url[length] = '\0';
 
-    if (http_parser_parse_url(at, length, 0, &u) == 0) {
-        //fprintf(stderr, "\n\n*** failed to parse URL %s ***\n\n", data);
-        //zfree(data);
-        //return -1;
+    if (http_parser_parse_url(at, length, 0, &u) != 0) {
+        fprintf(stderr, "\n\n*** failed to parse URL %s ***\n\n", url);
+        zfree(url);
+        uv_close((uv_handle_t*) &conn->stream, http_stream_on_close);
+        return -1;
     }
 
-    
-    conn->request->url = data;
+    conn->request->url = url;
+
+    MESSAGE_CHECK_URL(&u, conn->request->uri, UF_PATH);
+    MESSAGE_CHECK_URL(&u, conn->request->args, UF_QUERY);
 
     return 0;
 }
