@@ -1,3 +1,4 @@
+<?php
 /**
  * Copyright (c) 2014, César Rodas <crodas@php.net>
  * All rights reserved.
@@ -26,34 +27,24 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "notifd.h"
 
-static void do_exit(int sig)
+use NanoMsg\Nano as Nano;
+use NanoMsg\Socket as NanoSocket;
+use NanoMsg\Exception as NanoException;
+
+class Notifd
 {
-    uv_stop(uv_default_loop());
-}
-
-int main(int argc, char ** argv)
-{
-    Config_t * config;
-
-    signal(SIGINT, do_exit); 
-    config = config_init(argc, argv);
-    if (!config) {
-        PANIC(("Cannot load settings"));
+    public function __construct($conn = "tcp://127.0.0.1:2508")
+    {
+        $this->peer1 = new NanoSocket (Nano::AF_SP, Nano::NN_REQ);
+        $this->peer1->connect($conn);
     }
-    printf("Host: %s:%d\n", config->web_ip, config->web_port);
 
-    webserver_init(config, webroutes_get());
-    pubsub_init(config);
-    database_init(config);
-
-
-    uv_run(uv_default_loop(), UV_RUN_DEFAULT); /* main loop! */
-
-    database_destroy(config);
-    pubsub_destroy(config);
-    config_destroy(config);
-
-    printf("%.f: Server is offline\n", timems());
+    public function send($id, Array $data)
+    {
+        $data['nonce'] = uniqid();
+        $this->peer1->send(json_encode(["target" => $id, "message" => $data]));
+    }
 }
+
+

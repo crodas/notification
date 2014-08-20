@@ -40,7 +40,8 @@
 #include <jansson.h>
 
 typedef long long uint64;
-typedef double utime_t;
+
+#define utime_t         double
 
 #define VERSION         "0.0.1-beta"
 
@@ -154,7 +155,8 @@ typedef (db_callback_t)(void *, json_t *);
 
 extern Config_t * config_init(int, char **);
 
-void config_destroy(Config_t * config);
+extern void config_destroy(Config_t * config);
+extern utime_t timems();
 
 #define zfree(x)        if (x) { free(x); x = NULL; }
 #define zmalloc         malloc

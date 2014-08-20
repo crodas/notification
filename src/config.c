@@ -113,7 +113,7 @@ Config_t * config_init(int argc, char ** argv)
     /* default values */
     env->requests   = 0;
     env->uv_loop    = uv_default_loop();
-    env->start_time = now();
+    env->start_time = timems();
 
     CONFIG_SET_IF(integer, web_timeout, 30000)
     CONFIG_SET_IF(integer, web_port, 8000)

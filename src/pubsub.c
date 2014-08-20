@@ -41,7 +41,6 @@ static int epsock;
 static uv_timer_t ptimer;
 static uv_loop_t loop;
 
-
 static int _check_pubsubd(uv_timer_t * handle)
 {
     do {
@@ -75,7 +74,7 @@ static int _check_messages(uv_timer_t * handle)
     FETCH_CONNECTION_UV;
 
     json_t * messages = NULL;
-
+    
     do {
         char * buf = NULL;
         int bytes;
@@ -96,7 +95,7 @@ static int _check_messages(uv_timer_t * handle)
         char * str = buf;
         int len = bytes;
 
-        while (*str != '*' && *str != '\0') { len--; str++;}
+        while (*str != '\0') { len--; str++;}
         str++;len--;
 
         json_error_t error;
@@ -131,7 +130,7 @@ int pubsub_init(Config_t *env)
     int val = 1;
 
     sock = nn_socket (AF_SP, NN_PUB);
-    strcpy(pubsub_name, "inproc://test");
+    strcpy(pubsub_name, "inproc://pubsub");
     if ((esock = nn_bind(sock, pubsub_name)) == -1) {
         PANIC(("Failed to listen internal pubsub server (%s)", pubsub_name));
     }
@@ -147,16 +146,11 @@ int pubsub_init(Config_t *env)
     uv_timer_start(&ptimer, (uv_timer_cb) &_check_pubsubd, 1, 1);
 }
 
-int pubsub_publish(char * channel, json_t * object)
+static void database_save_handler(char * channel, json_t * object)
 {
     char * buf;
     char * tmp;
     int len, tlen;
-    char  uuid_str[32];
-
-    get_unique_id(uuid_str);
-    json_object_set_new(object, "_id", json_string(uuid_str));
-    json_object_set_new(object, "_ack", json_false());
 
     if (1) {
         char * t = json_dumps(object, 0);
@@ -164,38 +158,43 @@ int pubsub_publish(char * channel, json_t * object)
         free(t);
     }
 
-    database_save(channel, object);
-
     tmp = json_dumps(object, 0);
     tlen = strlen(tmp);
     buf = malloc(strlen(channel) + 2 + tlen);
     len = strlen(channel);
     strcpy(buf, channel);
-    buf[len++] = '*';
+    buf[len++] = '\0';
 
 
     strcpy(buf + len, tmp);
     len += tlen;
     buf[len] = '\0';
 
-    if (nn_send(sock, buf, len, NN_DONTWAIT) == -1) {
+    if (nn_send(sock, buf, len, NN_DONTWAIT) != len) {
         PANIC(("Failed to deliver message"));
     }
 
+    printf("json  ref %s\n", buf);fflush(stdout);
     zfree(tmp);
     zfree(buf);
+    json_decref(object);
+}
+
+int pubsub_publish(char * channel, json_t * object)
+{
+    char  uuid_str[32];
+
+    get_unique_id(uuid_str);
+    json_object_set_new(object, "_id", json_string(uuid_str));
+    json_object_set_new(object, "_ack", json_false());
+    json_incref(object);
+    database_save(channel, object, &database_save_handler);
 }
 
 int pubsub_subscription_create(char * channel, http_connection_t * conn)
 {
-    int len = strlen(channel);
-    char * rchannel = malloc(len + 2);
-    strcpy(rchannel, channel);
-    rchannel[len] = '*';
-    rchannel[len+1] = '\0';
-
     conn->psocket = nn_socket (AF_SP, NN_SUB);
-    nn_setsockopt (conn->psocket, NN_SUB, NN_SUB_SUBSCRIBE, rchannel, len);
+    nn_setsockopt (conn->psocket, NN_SUB, NN_SUB_SUBSCRIBE, channel, strlen(channel)+1);
 
     if ((conn->epsocket = nn_connect(conn->psocket, pubsub_name)) == -1) {
         // TODO: Shouldn't panic, insterad should return error
@@ -206,9 +205,8 @@ int pubsub_subscription_create(char * channel, http_connection_t * conn)
     conn->interval = (uv_timer_t*)malloc(sizeof(uv_timer_t));
     uv_timer_init(uv_default_loop(), conn->interval);
     conn->interval->data = (void *) conn;
-    uv_timer_start(conn->interval, (uv_timer_cb) &_check_messages, 100, 100);
+    uv_timer_start(conn->interval, (uv_timer_cb) &_check_messages, 0, 100);
     ADDREF(conn);
-    zfree(rchannel);
 }
 
 int pubsub_subscription_destroy(http_connection_t * conn)

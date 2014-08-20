@@ -29,19 +29,17 @@
 #include "notifd.h"
 #include <sys/time.h>
 
-#define MICRO_IN_SEC 1000000.00
-
 static Config_t     * config; 
 static uv_loop_t    * uv_loop;
 static http_parser_settings parser_settings;
 
-utime_t now()
+utime_t timems()
 {
-    struct timeval tp = {0};
+    struct timeval tp;
     if (gettimeofday(&tp, NULL)) {
         return (utime_t)-1;
     }
-    return (utime_t)(tp.tv_sec + tp.tv_usec / MICRO_IN_SEC);
+    return (utime_t)(tp.tv_sec) * 1000LL + (tp.tv_usec) / 1000;
 }
 
 void http_stream_on_alloc(uv_handle_t* client, size_t suggested_size, uv_buf_t* buf)
@@ -118,7 +116,7 @@ static void on_connect(uv_stream_t* stream, int status)
     MALLOC(http_connection_t, conn);
     conn->request   = NULL;
     conn->response  = NULL;
-    conn->time      = now();
+    conn->time      = timems();
     conn->routes    = (struct http_routes *)stream->data;
     conn->timeout   = NULL;
     conn->interval  = NULL;
@@ -223,7 +221,7 @@ int http_send_response(http_connection_t * conn)
 
     conn->replied = 1;
 
-    sprintf(time, "%f", now() - conn->time);
+    sprintf(time, "%f", timems() - conn->time);
     HEADER("X-Response-Time", time);
     HEADER("Access-Control-Allow-Origin", config->web_allow_origin);
 

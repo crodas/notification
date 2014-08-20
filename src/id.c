@@ -38,7 +38,7 @@ static uint64 counter = 0;
 void get_unique_id(char * uuid)
 {
     struct timeval tp;
-    uint64 time = (uint64) now();
+    uint64 time = (uint64) timems();
     uint64 rnd0;
 
     gettimeofday(&tp, NULL);

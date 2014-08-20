@@ -46,6 +46,7 @@ typedef struct {
 typedef struct {
     char * channel;
     json_t * data;
+    db_callback_t * callback;
 } save_t;
 
 int database_destroy(Config_t * env)
@@ -64,6 +65,9 @@ int database_init(Config_t * env)
 static void database_worker_save_release(uv_work_t * req, int s)
 {
     save_t * saved = (save_t *) req->data;
+    if (saved->callback) {
+        saved->callback(saved->channel, saved->data);
+    }
     json_decref(saved->data);
     zfree(saved->channel);
     zfree(saved);
@@ -82,7 +86,7 @@ static void database_worker_save(uv_work_t * req)
             result = json_array();
             short_insert = 1;
         }
-        json_array_append_new(result, obj);
+        json_array_append(result, obj);
         if (json_array_size(result) > config->web_history) {
             json_array_remove(result, 0);
         }
@@ -93,14 +97,14 @@ static void database_worker_save(uv_work_t * req)
     RELEASE
 }
 
-void database_save(char * channel, json_t * object)
+void database_save(char * channel, json_t * object, db_callback_t * on_ready)
 {
     MALLOC(uv_work_t, worker);
     MALLOC(save_t, saving);
     saving->channel = strdup(channel);
     saving->data = object;
+    saving->callback = on_ready;
     worker->data = (void *)saving;
-    json_incref(object);
 
     uv_queue_work(uv_default_loop(), worker, database_worker_save, database_worker_save_release);
 }

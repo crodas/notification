@@ -27,25 +27,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
-use NanoMsg\Nano as Nano;
-use NanoMsg\Socket as NanoSocket;
-use NanoMsg\Exception as NanoException;
-
-class Notifd
-{
-    public function __construct($conn = "tcp://127.0.0.1:2508")
-    {
-        $this->peer1 = new NanoSocket (Nano::AF_SP, Nano::NN_REQ);
-        $this->peer1->connect($conn);
-    }
-
-    public function send($id, Array $data)
-    {
-        $data['nonce'] = uniqid();
-        $this->peer1->send(json_encode(["target" => $id, "message" => $data]));
-    }
-}
+require __DIR__ . "/notifd.php";
 
 $client = new Notifd;
 

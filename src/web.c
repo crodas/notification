@@ -73,6 +73,7 @@ void _messages_query_result(void * data, json_t * messages)
         RESPONSE_TRUE("db");
         RESPONSE_FALSE("pubsub");
         RESPONSE_SET("n", json_integer(json_array_size(messages)));
+        printf("FROM DATABASE\n");
         http_send_response(conn);
     } else {
         do_subscribe(data);
@@ -105,9 +106,8 @@ static int get_info(http_connection_t * conn)
         json_object_set_new(info, "version", json_string(VERSION));
         json_object_set_new(info, "host", json_string(config->web_ip));
         json_object_set_new(info, "port", json_integer(config->web_port));
-        json_object_set_new(info, "uptime", json_real(now() - config->start_time));
+        json_object_set_new(info, "uptime", json_real(timems() - config->start_time));
         json_object_set_new(info, "requests", json_integer(config->requests));
-        printf("%f\n", now() - config->start_time);
     }
 
     RESPONSE_SET("info", info);
