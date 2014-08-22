@@ -94,14 +94,11 @@ void http_stream_on_read(uv_stream_t* handle, ssize_t nread, uv_buf_t* buf)
     size_t parsed;
     FETCH_CONNECTION_UV;
 
-     if (nread >= 0) {
+    if (nread >= 0) {
          parsed = http_parser_execute(&conn->parser, &parser_settings, buf->base, nread);
 
          if (parsed < nread) {
-             /* uv_close((uv_handle_t*)
-              * &client->handle,
-              * http_stream_on_close);
-              * */
+            uv_close((uv_handle_t*)&handle, http_stream_on_close);
          }
      } else {
         uv_close((uv_handle_t*) &conn->stream, http_stream_on_close);
@@ -234,6 +231,8 @@ int http_send_response(http_connection_t * conn)
     HEADER("X-Connection-Id", conn->id);
     HEADER("X-Response-Time", time);
     HEADER("Access-Control-Allow-Origin", config->web_allow_origin);
+
+    RESPONSE_STRING("reqid", conn->id);
 
     http_build_header_ptr(conn->response);
     resbuf = uv_buf_init(conn->response->header_ptr, conn->response->header_len);

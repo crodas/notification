@@ -165,6 +165,7 @@ extern utime_t timems();
 
 #define MALLOC_EX(t, n) n = (t *)malloc(sizeof(t))
 #define MALLOC(t, n)    t * MALLOC_EX(t, n)
+#define REQDEBUG(x)        do {printf("%.f %s => %s\n", timems()-conn->time, conn->id, x);fflush(stdout); }while(0);
 
 #define FOREACH(array, key, value) do { \
     dictIterator * di = dictGetIterator(array); \

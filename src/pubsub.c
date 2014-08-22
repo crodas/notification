@@ -73,12 +73,6 @@ int pubsub_init(Config_t *env)
 
 static void database_save_handler(char * channel, json_t * object)
 {
-    if (1) {
-        char * t = json_dumps(object, 0);
-        //printf("Setting %s => %s\n", channel, t);fflush(stdout);
-        free(t);
-    }
-
     dictEntry *de;
     listNode *ln;
     listIter li;
