@@ -1,0 +1,16 @@
+language: php
+script: phpunit test/TestSuite.php
+ 
+install:
+    - 5.4
+
+
+before_script:
+  - apt-get install php-pear php5-dev
+  - wget http://download.nanomsg.org/nanomsg-0.4-beta.tar.gz
+  - tar xfvz nanomsg-0.4 ; ./configure ; make install
+  - git clone git@github.com:mkoppanen/php-nano.git
+  - cd php-nano; phpize ; ./configure ; make install
+  - phpenv config-add php.ini
+  - cmake . ; make install
+
