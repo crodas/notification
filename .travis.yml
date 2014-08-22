@@ -8,8 +8,10 @@ before_script:
   - sudo apt-get install php-pear php5-dev
   - wget http://download.nanomsg.org/nanomsg-0.4-beta.tar.gz
   - tar xfvz nanomsg-0.4-beta.tar.gz ; cd nanomsg-0.4-beta; ./configure ; sudo make install
+  - cd -
   - git clone git://github.com/mkoppanen/php-nano.git
   - cd php-nano; phpize ; ./configure ; sudo make install
+  - cd -
   - cat ./travis/php.ini
   - phpenv rehash
   - phpenv config-add ./travis/php.ini
