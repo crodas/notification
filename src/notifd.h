@@ -193,7 +193,7 @@ extern utime_t timems();
 #define RESPONSE_STRING(name, value)    json_object_set_new(conn->response->object, name, json_string(value))
 #define RESPONSE_SET(name, value)       json_object_set_new(conn->response->object, name, value)
 
-#define $_GET(x)                        dictFetchValue(conn->request->args, x);
+#define $_GET(x)                        dictFetchValue(conn->request->args, x)
 
 #define BETWEEN(a, min, max)                (a >= min && max >= a)
 #define MIN(a, b)                           (a > b ? b : a)

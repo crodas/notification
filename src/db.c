@@ -37,7 +37,8 @@ uv_rwlock_t numlock;
 #define RELEASE     uv_rwlock_wrunlock(&numlock);
 
 typedef struct {
-    char * id;
+    char * channel;
+    char * lastId;
     json_t * result;
     db_callback_t * callback;
     void * data;
@@ -120,18 +121,41 @@ void database_worker_query(uv_work_t *req)
 {
     query_t * q = (query_t *)req->data;
     LOCK
-    q->result = (json_t * ) dictFetchValue(db, q->id);
-    if (q->result) json_incref(q->result);
+    q->result = (json_t * ) dictFetchValue(db, q->channel);
+    if (q->result) {
+        if (!q->lastId) {
+            // return the entire json array
+            json_incref(q->result);
+        } else {
+            // filter! filter!
+            json_t * array;
+            array = json_array();
+            size_t i, s = json_array_size(q->result);
+            int ql = strlen(q->lastId);
+            for (i=0; i < s; i++) {
+                json_t * current    = json_array_get(q->result, i);
+                json_t * key        = json_object_get(current, "_id");
+                if (json_is_string(key)) {
+                    char * skey = json_string_value(key);
+                    if (strncmp(skey, q->lastId, MIN(strlen(skey), ql)) == 1) {
+                        json_array_append(array, current);
+                    }
+                }
+            }
+            q->result = array;
+        }
+    }
     RELEASE
 }
 
-void database_query(char * id, db_callback_t * next, void * data)
+void database_query(char * channel, char * lastId, db_callback_t * next, void * data)
 {
     MALLOC(uv_work_t, worker);
     MALLOC(query_t, query);
 
-    query->id = id;
-    query->data = data;
+    query->channel  = channel;
+    query->lastId   = lastId;
+    query->data     = data;
     query->callback = next;
 
     worker->data = (void *)query;

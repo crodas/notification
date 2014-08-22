@@ -4,7 +4,13 @@ require __DIR__ . "/../notifd.php";
 
 function url($url)
 {
-    return "http://localhost:8000/$url?timeout=10";
+    $query = ['timeout' => 10];
+    if ($q = parse_url($url, PHP_URL_QUERY)) {
+        parse_str($q, $zquery);
+        $query = array_merge($query, $zquery);
+        $url = parse_url($url, PHP_URL_PATH);
+    }
+    return "http://localhost:8000/$url?" . http_build_query($query);
 }
 
 function get($url)
@@ -49,7 +55,7 @@ class basicTest extends PHPUnit_Framework_TestCase
     /**
      *  @dataProvider getChannels
      */
-    public function testMessage($channel)
+    public function testMessageFlow($channel)
     {
         $n = new Notifd();
         $x = rand();
@@ -63,8 +69,25 @@ class basicTest extends PHPUnit_Framework_TestCase
         $this->assertEquals($data['messages'][0]['x'], $x);
         $this->assertTrue(microtime(true) - $start < 7);
         $this->assertEquals($data['n'], 1);
-        //$this->assertTrue($data['db']);
+        $this->assertTrue($data['db']);
         $this->assertEquals($data['channel'], $channel);
+
+        $start = microtime(true);
+        $lastid = $data['messages'][0]['_id'];
+        $data = get("channel/$channel?lastId={$lastid}");
+        $this->assertEquals($data['messages'], []);
+
+        $start = microtime(true);
+        $n = new Notifd();
+        $x = rand();
+        $n->send($channel, ['something' => $channel, 'x' => $x, 'y' => 'new']);
+        usleep(50000);
+        $data = get("channel/$channel?lastId={$lastid}");
+        $this->assertNotEquals($data['messages'][0]['_id'], $lastid);
+        $this->assertEquals(count($data['messages']), 1);
+        $this->assertEquals($data['messages'][0]['something'], $channel);
+        $this->assertEquals($data['messages'][0]['x'], $x);
+        $this->assertEquals($data['messages'][0]['y'], 'new');
     }
 
     /**

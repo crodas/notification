@@ -83,7 +83,7 @@ void _messages_query_result(void * data, json_t * messages)
 static int do_listen(http_connection_t * conn)
 {
     char * channel = conn->request->uri + 9;
-    database_query(channel, _messages_query_result, (void *) conn);
+    database_query(channel, (char*)$_GET("lastId"), _messages_query_result, (void *) conn);
     RESPONSE_STRING("channel", channel);
 }
 
