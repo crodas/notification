@@ -75,7 +75,7 @@ static void database_save_handler(char * channel, json_t * object)
 {
     if (1) {
         char * t = json_dumps(object, 0);
-        printf("Setting %s => %s\n", channel, t);fflush(stdout);
+        //printf("Setting %s => %s\n", channel, t);fflush(stdout);
         free(t);
     }
 
@@ -97,7 +97,8 @@ static void database_save_handler(char * channel, json_t * object)
             json_array_append(messages, object);
             RESPONSE_SET("messages", messages);
             RESPONSE_SET("n", json_integer(1));
-            RESPONSE_TRUE("db");
+            RESPONSE_FALSE("db");
+            RESPONSE_TRUE("pubsub");
             http_send_response(conn);
         }
     }

@@ -33,10 +33,6 @@ static Config_t     * config;
 static uv_loop_t    * uv_loop;
 static http_parser_settings parser_settings;
 
-#define uv_close(a, b) \
-    printf("closing %s. %s -> %d\n", #a, __FILE__, __LINE__);fflush(stdout); \
-    uv_close(a, b);
-
 utime_t timems()
 {
     struct timeval tp;
@@ -193,7 +189,6 @@ static void http_build_header_ptr(http_response_t * response)
 static void http_server_sent_body(uv_write_t* handle, int status)
 {
     FETCH_CONNECTION_UV
-    printf("Conn-id: %s\n", conn->id);
     uv_close((uv_handle_t*)handle->handle, http_stream_on_close);
 }
 
@@ -292,7 +287,7 @@ WEB_SIMPLE_EVENT(message_complete)
     HEADER("Connection", "Close")
     HEADER("X-Powered-By", "WebPubSub");
 
-    int rlen = strlen(conn->request->url);
+    int rlen = strlen(conn->request->uri);
     for (; routes->handler; routes++) {
         if (routes->method == HTTP_ANY || routes->method == conn->request->method) {
             int len = strlen(routes->path);
@@ -308,7 +303,7 @@ WEB_SIMPLE_EVENT(message_complete)
                 continue;
             }
 
-            if (strncmp(conn->request->url, routes->path, (size_t)len) == 0) {
+            if (strncmp(conn->request->uri, routes->path, (size_t)len) == 0) {
                 routes->handler( conn );
                 found = 1;
                 break;

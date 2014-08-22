@@ -73,7 +73,6 @@ void _messages_query_result(void * data, json_t * messages)
         RESPONSE_TRUE("db");
         RESPONSE_FALSE("pubsub");
         RESPONSE_SET("n", json_integer(json_array_size(messages)));
-        printf("FROM DATABASE\n");
         http_send_response(conn);
     } else {
         do_subscribe(data);
