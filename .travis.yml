@@ -3,7 +3,7 @@ script: phpunit test/TestSuite.php
  
 php:
     - 5.4
-
+    - 5.5
 
 before_script:
   - sudo apt-get install php-pear php5-dev
