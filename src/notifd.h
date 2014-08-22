@@ -37,9 +37,11 @@
 #include <ctype.h>
 #include <http_parser.h>
 #include "dict.h"
+#include "adlist.h"
 #include <jansson.h>
+#include "refcount.h"
 
-typedef long long uint64;
+typedef unsigned long long int uint64;
 
 #define utime_t         double
 
@@ -99,6 +101,8 @@ struct http_request {
     dict * args;
 
     struct http_body body;
+    void * data;
+    void (*free_data)(void *);
 
     int http_major;
     int http_minor;
@@ -106,6 +110,8 @@ struct http_request {
 
 struct http_connection
 {
+    HAS_REFERENCE;
+
     uv_tcp_t        stream;
     http_parser     parser;
     uv_write_t      write_req;
@@ -122,8 +128,8 @@ struct http_connection
     int current_header_value_length;
     int keep_alive;
 
-    int psocket;
-    int epsocket;
+    char id[40];
+
     int replied;
 
 
@@ -131,12 +137,6 @@ struct http_connection
 
     /* setup timers */
     uv_timer_t * timeout;
-    uv_timer_t * interval;
-
-    /* counters, useful to release itself
-       when no ter or coutner is especting us */
-    int refcount;
-    void (*free)( void * );
 };
 
 struct http_routes {
@@ -158,18 +158,10 @@ extern Config_t * config_init(int, char **);
 extern void config_destroy(Config_t * config);
 extern utime_t timems();
 
-#define zfree(x)        if (x) { free(x); x = NULL; }
+#define zfree(x)        if (x) { free(x); }
 #define zmalloc         malloc
 #define zcalloc(x)      calloc(x, 1)
 #define PANIC(x)        do { printf x; printf("\n"); fflush(stdout); exit(-1); } while(0);
-
-#define INCREF(x)   ++x->refcount;
-#define ADDREF      INCREF
-#define DECREF(x)   if (x && --x->refcount == 0) { \
-        if (x->free) x->free(x); \
-        else zfree(x); \
-        x = NULL; \
-    }
 
 #define MALLOC_EX(t, n) n = (t *)malloc(sizeof(t))
 #define MALLOC(t, n)    t * MALLOC_EX(t, n)
@@ -219,5 +211,9 @@ extern utime_t timems();
 
 #define TOUPPER(x) _STRMAP(x, toupper);
 #define TOLOWER(x) _STRMAP(x, tolower);
+
+#define _assertWithInfo(expr, file, line)   printf("Assertion failed: %s at %s:%d\n", expr, file, line)
+
+#define assertWithInfo(x)   ((x) ? (void)0 : (_assertWithInfo(#x, __FILE__, __LINE__), exit(1)) )
 
 #endif

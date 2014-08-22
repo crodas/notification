@@ -26,36 +26,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "notifd.h"
 
-static void do_exit(int sig)
-{
-    uv_stop(uv_default_loop());
-}
+#define HAS_REFERENCE                                  \
+    int refcount;                                       \
+    void (*free)( void * );                             \
 
-int main(int argc, char ** argv)
-{
-    Config_t * config;
+#define REFERENCE_INIT(x, ffree)     \
+    x->refcount = 1;        \
+    x->free     = ffree;    \
 
-    signal(SIGINT, do_exit); 
-    config = config_init(argc, argv);
-    if (!config) {
-        PANIC(("Cannot load settings"));
+#define INCREF(x)   ++(x)->refcount;
+#define DECREF(x)   if ((x) && --(x)->refcount == 0) { \
+        if ((x)->free) (x)->free(x); \
+        else zfree((x)); \
     }
-    printf("Host: %s:%d\n", config->web_ip, config->web_port);
 
-    webserver_init(config, webroutes_get());
-    pubsub_init(config);
-    database_init(config);
-    server_init(config);
-
-
-    uv_run(uv_default_loop(), UV_RUN_DEFAULT); /* main loop! */
-
-    server_destroy(config);
-    database_destroy(config);
-    pubsub_destroy(config);
-    config_destroy(config);
-
-    printf("%.f: Server is offline\n", timems());
-}
+typedef struct {
+    HAS_REFERENCE;
+    union {
+        dict * dict;
+        list  * list;
+    } data;
+    enum {
+        DICT, 
+        LIST
+    } type;
+} varint_t;

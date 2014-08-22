@@ -187,5 +187,7 @@ unsigned long dictScan(dict *d, unsigned long v, dictScanFunction *fn, void *pri
 /* Hash table types */
 extern dictType dictTypeHeapStringCopyKeyValue;
 extern dictType dictTypeMemDatabase;
+extern dictType setDictType;
+extern dictType setDictListType;
 
 #endif /* __DICT_H */

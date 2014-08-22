@@ -42,7 +42,7 @@ static void conn_listen_no_messages(uv_timer_t * handle)
 
 static int do_subscribe(http_connection_t * conn)
 {
-    char * channel = conn->request->url + 9;
+    char * channel = conn->request->uri + 9;
     int web_timeout = config->web_timeout;
     char  * timeout = $_GET("timeout");
     int ttimeout = 0;
@@ -58,7 +58,7 @@ static int do_subscribe(http_connection_t * conn)
         conn->timeout->data = (void *) conn;
         uv_timer_start(conn->timeout, (uv_timer_cb) &conn_listen_no_messages, web_timeout, 0);
         pubsub_subscription_create(channel, conn);
-        ADDREF(conn);
+        INCREF(conn);
         return;
     }
 

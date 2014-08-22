@@ -67,7 +67,20 @@ static void _dictStringDestructor(void *privdata, void *key)
 
 static void _dictJsonDestructor(void * privdata, void * value)
 {
+    DICT_NOTUSED(privdata);
     json_decref((json_t *)value);
+}
+
+static void _varintDestructor(void * privdata, void * value)
+{
+    DICT_NOTUSED(privdata);
+    DECREF((varint_t*)value);
+}
+
+static void _listDestructor(void * p, void * value)
+{
+    DICT_NOTUSED(p);
+    listRelease((list*)value);
 }
 
 dictType dictTypeHeapStringCopyKeyValue = {
@@ -88,3 +101,20 @@ dictType dictTypeMemDatabase = {
     _dictJsonDestructor,         /* val destructor */
 };
 
+dictType setDictType = {
+    _dictStringCopyHTHashFunction, /* hash function */
+    _dictStringDup,                /* key dup */
+    NULL,                      /* val dup */
+    _dictStringCopyHTKeyCompare,   /* key compare */
+    _dictStringDestructor, /* key destructor */
+    NULL
+};
+
+dictType setDictListType = {
+    _dictStringCopyHTHashFunction, /* hash function */
+    _dictStringDup,                /* key dup */
+    NULL,                      /* val dup */
+    _dictStringCopyHTKeyCompare,   /* key compare */
+    _dictStringDestructor, /* key destructor */
+    _listDestructor
+};

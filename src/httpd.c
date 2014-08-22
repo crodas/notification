@@ -33,6 +33,10 @@ static Config_t     * config;
 static uv_loop_t    * uv_loop;
 static http_parser_settings parser_settings;
 
+#define uv_close(a, b) \
+    printf("closing %s. %s -> %d\n", #a, __FILE__, __LINE__);fflush(stdout); \
+    uv_close(a, b);
+
 utime_t timems()
 {
     struct timeval tp;
@@ -52,10 +56,11 @@ static void _conn_destroy(void * ptr)
 {
     http_connection_t * conn = (http_connection_t *) ptr;
     zfree(conn->timeout);
-    zfree(conn->interval);
-    if (conn->psocket > 0) {
-        pubsub_subscription_destroy(conn);
+
+    if (conn->request->data) {
+        conn->request->free_data(conn);
     }
+
     if (conn->request) {
         dictRelease(conn->request->headers);
         zfree(conn->request->body.buffer);
@@ -85,9 +90,6 @@ static void http_stream_on_close(uv_handle_t* handle)
     if (conn->timeout) {
         uv_close((uv_handle_t*)conn->timeout, _timer_close_listener);
     }
-    if (conn->interval) {
-        uv_close((uv_handle_t*)conn->interval, _timer_close_listener);
-    }
     DECREF(conn);
 }
 
@@ -114,16 +116,14 @@ void http_stream_on_read(uv_stream_t* handle, ssize_t nread, uv_buf_t* buf)
 static void on_connect(uv_stream_t* stream, int status)
 {
     MALLOC(http_connection_t, conn);
+    get_unique_id(conn->id); 
     conn->request   = NULL;
     conn->response  = NULL;
     conn->time      = timems();
     conn->routes    = (struct http_routes *)stream->data;
     conn->timeout   = NULL;
-    conn->interval  = NULL;
-    conn->psocket   = 0;
-    conn->refcount  = 1;
     conn->replied   = 0;
-    conn->free      = _conn_destroy;
+    REFERENCE_INIT(conn, _conn_destroy);
 
     uv_tcp_init(uv_loop, &conn->stream);
     http_parser_init(&conn->parser, HTTP_REQUEST);
@@ -149,6 +149,8 @@ WEB_SIMPLE_EVENT(message_begin)
     conn->request->headers = dictString(NULL);
     conn->request->body.buffer  = NULL;
     conn->request->body.len     = 0;
+    conn->request->data         = NULL;
+    conn->request->free_data    = NULL;
 
     /* Presize the dict to avoid rehashing */
     dictExpand(conn->request->headers, 5);
@@ -191,6 +193,7 @@ static void http_build_header_ptr(http_response_t * response)
 static void http_server_sent_body(uv_write_t* handle, int status)
 {
     FETCH_CONNECTION_UV
+    printf("Conn-id: %s\n", conn->id);
     uv_close((uv_handle_t*)handle->handle, http_stream_on_close);
 }
 
@@ -219,8 +222,9 @@ int http_send_response(http_connection_t * conn)
     uv_buf_t resbuf;
     char time[90];
 
-    conn->replied = 1;
+    assertWithInfo(conn->replied == 0);
 
+    conn->replied = 1;
     sprintf(time, "%f", timems() - conn->time);
     HEADER("X-Response-Time", time);
     HEADER("Access-Control-Allow-Origin", config->web_allow_origin);

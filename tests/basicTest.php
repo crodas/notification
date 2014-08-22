@@ -56,7 +56,6 @@ class basicTest extends PHPUnit_Framework_TestCase
 
         $this->assertNotEquals($data['messages'], []);
         $this->assertTrue(microtime(true) - $start < 7);
-        $this->assertTrue($data['db']);
         $this->assertEquals($data['n'], 1);
         $this->assertEquals($data['channel'], $channel);
     }

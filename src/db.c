@@ -90,7 +90,6 @@ static void database_worker_save(uv_work_t * req)
         if (json_array_size(result) > config->web_history) {
             json_array_remove(result, 0);
         }
-        json_incref(obj);
         if (short_insert) {
             dictAdd(db, saving->channel, result);
         }
