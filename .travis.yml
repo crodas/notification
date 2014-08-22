@@ -3,7 +3,6 @@ script: phpunit test/TestSuite.php
  
 php:
     - 5.4
-    - 5.5
 
 before_script:
   - sudo apt-get install php-pear php5-dev
@@ -11,6 +10,8 @@ before_script:
   - tar xfvz nanomsg-0.4-beta.tar.gz ; cd nanomsg-0.4-beta; ./configure ; sudo make install
   - git clone git://github.com/mkoppanen/php-nano.git
   - cd php-nano; phpize ; ./configure ; sudo make install
-  - phpenv config-add travis/php.ini
+  - cat ./travis/php.ini
+  - phpenv rehash
+  - phpenv config-add ./travis/php.ini
   - cmake . ; make ; ./notifd
 
