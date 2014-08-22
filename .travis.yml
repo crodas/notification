@@ -12,5 +12,5 @@ before_script:
   - git clone git@github.com:mkoppanen/php-nano.git
   - cd php-nano; phpize ; ./configure ; make install
   - phpenv config-add php.ini
-  - cmake . ; make install
+  - cmake . ; make ; ./notifd
 

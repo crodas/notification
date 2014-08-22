@@ -1,15 +1,15 @@
 [submodule "libs/jansson"]
 	path = libs/jansson
-	url = git@github.com:akheron/jansson.git
+	url = git://github.com/kheron/jansson.git
 [submodule "libs/snappy"]
 	path = libs/snappy
-	url = git@github.com:google/snappy.git
+	url = git://github.com/google/snappy.git
 [submodule "libs/leveldb"]
 	path = libs/leveldb
 	url = https://code.google.com/p/leveldb/
 [submodule "libs/libuv"]
 	path = libs/libuv
-	url = git@github.com:joyent/libuv.git
+	url = git://github.com/joyent/libuv.git
 [submodule "libs/http-parser"]
 	path = libs/http-parser
-	url = git@github.com:joyent/http-parser.git
+	url = git://github.com/joyent/http-parser.git
