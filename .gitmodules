@@ -1,6 +1,6 @@
 [submodule "libs/jansson"]
 	path = libs/jansson
-	url = git://github.com/kheron/jansson.git
+	url = git://github.com/akheron/jansson.git
 [submodule "libs/snappy"]
 	path = libs/snappy
 	url = git://github.com/google/snappy.git
