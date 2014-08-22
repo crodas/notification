@@ -196,11 +196,27 @@ elseif (HAVE__SNPRINTF)
    set(JSON_SNPRINTF _snprintf)
 endif () 
 
+include(CheckSymbolExists)
+    include(CheckCSourceCompiles)
+
 check_c_source_compiles ("int main() { unsigned long val; __sync_bool_compare_and_swap(&val, 0, 1); return 0; } " HAVE_SYNC_BUILTINS)
 check_c_source_compiles ("int main() { char l; unsigned long v;
         __atomic_test_and_set(&l, __ATOMIC_RELAXED); __atomic_store_n(&v, 1,
             __ATOMIC_RELEASE); __atomic_load_n(&v, __ATOMIC_ACQUIRE); return
         0; }" HAVE_ATOMIC_BUILTINS)
+
+check_c_source_compiles("int main() { long long test = 0; return test; }" json_have_long_long)
+if(NOT json_have_long_long)
+    set(json_have_long_long 0)
+endif()
+check_c_source_compiles("inline int test() { return 0; }\nint main() { return test(); }" json_inline)
+if(json_inline)
+    set(json_inline inline)
+endif()
+check_symbol_exists(localeconv locale.h json_have_localeconv)
+if(NOT json_have_localeconv)
+    set(json_have_localeconv 0)
+endif()
 
 set(JANSSON libs/jansson)
 
@@ -212,4 +228,9 @@ configure_file (${JANSSON}/cmake/jansson_private_config.h.cmake
 add_definitions(-DHAVE_CONFIG_H)
 
 include_directories (${JANSSON}/include)
+include_directories (${JANSSON}/src)
 include_directories (${JANSSON}/private_include)
+
+configure_file(${JANSSON}/src/jansson_config.h.in 
+    ${JANSSON}/src/jansson_config.h
+    @ONLY)
