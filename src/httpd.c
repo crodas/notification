@@ -202,6 +202,7 @@ static void http_server_sent_header(uv_write_t* handle, int status)
 {
     FETCH_CONNECTION_UV
     uv_buf_t resbuf;
+    dictEntry * de;
 
     int flags;
 
@@ -211,7 +212,16 @@ static void http_server_sent_header(uv_write_t* handle, int status)
         flags |= JSON_INDENT(4);
     }
 
-    conn->response->ptr = json_dumps(conn->response->object, flags);
+    de = dictFind(conn->request->args, "callback");
+    char * json = json_dumps(conn->response->object, flags);
+    if (de) {
+        char * cb = dictGetVal(de);
+        conn->response->ptr = zmalloc(strlen(json) + strlen(cb) + 3);
+        sprintf(conn->response->ptr, "%s(%s)", cb, json);
+        zfree(json);
+    } else {
+        conn->response->ptr = json;
+    }
     resbuf = uv_buf_init(conn->response->ptr, strlen(conn->response->ptr));
 
     uv_write(&conn->write_req, (uv_stream_t*) &conn->stream, &resbuf, 1, http_server_sent_body);
@@ -225,7 +235,8 @@ int http_send_response(http_connection_t * conn)
     assertWithInfo(conn->replied == 0);
 
     conn->replied = 1;
-    sprintf(time, "%f", timems() - conn->time);
+    sprintf(time, "%.f ms", timems() - conn->time);
+    HEADER("X-Connection-Id", conn->id);
     HEADER("X-Response-Time", time);
     HEADER("Access-Control-Allow-Origin", config->web_allow_origin);
 
