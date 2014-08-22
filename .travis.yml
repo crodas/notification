@@ -1,7 +1,7 @@
 language: php
 script: phpunit test/TestSuite.php
  
-install:
+php:
     - 5.4
 
 
