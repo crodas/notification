@@ -130,19 +130,25 @@ void database_worker_query(uv_work_t *req)
             // filter! filter!
             json_t * array;
             array = json_array();
-            size_t i, s = json_array_size(q->result);
+            size_t i, x, s = json_array_size(q->result);
             int ql = strlen(q->lastId);
-            for (i=0; i < s; i++) {
+            for (i=0, x =0; i < s; i++) {
                 json_t * current    = json_array_get(q->result, i);
                 json_t * key        = json_object_get(current, "_id");
                 if (json_is_string(key)) {
                     char * skey = json_string_value(key);
                     if (strncmp(skey, q->lastId, MIN(strlen(skey), ql)) == 1) {
                         json_array_append(array, current);
+                        x++;
                     }
                 }
             }
-            q->result = array;
+            if (x)  {
+                q->result = array;
+            } else { 
+                json_decref(array);
+                q->result = NULL;
+            }
         }
     }
     RELEASE
