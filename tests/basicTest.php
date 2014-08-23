@@ -44,7 +44,7 @@ class basicTest extends PHPUnit_Framework_TestCase
     public static function getChannels()
     {
         $channels = [];
-        for ($i=0; $i < 500; $i++) {
+        for ($i=0; $i < 100; $i++) {
             $x = rand();
             $channels[] = ["foo-$i-$x"];
         }
