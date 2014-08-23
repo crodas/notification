@@ -14,4 +14,4 @@ find_library(namo nanomsg)
 
 add_executable(notifd ${jansson} ${level} ${uv} ${HTTP} ${web})
 
-target_link_libraries (notifd ${CMAKE_THREAD_LIBS_INIT} dl nanomsg)
+target_link_libraries (notifd ${CMAKE_THREAD_LIBS_INIT} dl nanomsg rt)
