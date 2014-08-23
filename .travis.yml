@@ -1,5 +1,5 @@
 language: php
-script: phpunit tests/TestSuite.php
+script: phpunit --stop-on-error --stop-on-failure tests/TestSuite.php
  
 php:
     - 5.4
@@ -16,6 +16,6 @@ before_script:
   - phpenv rehash
   - phpenv config-add ./travis/php.ini
   - cmake . ; make 
-  - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec ./notifd
+  - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec $(pwd)/notifd
 
 
