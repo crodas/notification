@@ -1,4 +1,4 @@
-Notification Push Server
+Notification Push Server [![Build Status](https://travis-ci.org/crodas/notification.svg?branch=master)](https://travis-ci.org/crodas/notification)
 ========================
 
 The idea behind this project is to create an easy way of delivering notifications/messages to peers in real time over HTTP.
