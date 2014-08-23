@@ -83,7 +83,6 @@ class basicTest extends PHPUnit_Framework_TestCase
         $n->send($channel, ['something' => $channel, 'x' => $x, 'y' => 'new']);
         usleep(50000);
         $data = get("channel/$channel?lastId={$lastid}");
-        var_dump($data);exit;
         $this->assertNotEquals($data['messages'][0]['_id'], $lastid);
         $this->assertEquals(count($data['messages']), 1);
         $this->assertEquals($data['messages'][0]['something'], $channel);
