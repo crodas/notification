@@ -15,5 +15,7 @@ before_script:
   - cat ./travis/php.ini
   - phpenv rehash
   - phpenv config-add ./travis/php.ini
-  - cmake . ; make ; (./notifd &)&
+  - cmake . ; make 
+  - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec ./notifd
+
 
