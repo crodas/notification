@@ -10,7 +10,7 @@ before_script:
   - tar xfvz nanomsg-0.4-beta.tar.gz ; cd nanomsg-0.4-beta; ./configure ; sudo make install
   - cd -
   - git clone git://github.com/mkoppanen/php-nano.git
-  - cd php-nano; phpize ; ./configure ; sudo make install
+  - cd php-nano; phpize ; ./configure --prefix=/usr ; sudo make install
   - cd -
   - cat ./travis/php.ini
   - phpenv rehash
