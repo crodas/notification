@@ -74,7 +74,7 @@ class basicTest extends PHPUnit_Framework_TestCase
 
         $start = microtime(true);
         $lastid = $data['messages'][0]['_id'];
-        $data = get("channel/$channel?lastId={$lastid}");
+        $data = get("channel/$channel?lastId={$lastid}&timeout=1");
         $this->assertEquals($data['messages'], []);
 
         $start = microtime(true);
